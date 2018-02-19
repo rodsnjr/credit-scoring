@@ -15,7 +15,8 @@ DIR = os.path.dirname(os.path.realpath(__file__))
 SAMPLE_SET = os.path.join(DIR, 'dataset', 'sampleEntry.csv')
 TEST_SET = os.path.join(DIR, 'dataset', 'cs-test.csv')
 TRAIN_SET = os.path.join(DIR, 'dataset', 'cs-training.csv')
-FEATURE_SET = os.path.join(DIR, 'dataset', 'features.csv')
+FEATURE_SET = os.path.join(DIR, 'dataset', 'training-features.csv')
+FEATURE_TEST_SET = os.path.join(DIR, 'dataset', 'test-features.csv')
 DICTIONARY = os.path.join(DIR, 'dataset', 'Data Dictionary.xls')
 
 def clean_columns(data):
@@ -30,8 +31,7 @@ def load_dictionary():
 
 def load_test_set():
     df = pd.read_csv(TEST_SET, sep=',')
-    df = df.drop('Unnamed: 0', axis = 1)
-    clean_columns(df)
+    df = df.rename(columns = {'Unnamed: 0': 'Id'})
     return df
 
 def load_training_set():
@@ -42,6 +42,13 @@ def load_training_set():
 
 def load_features_set():
     df = pd.read_csv(FEATURE_SET)
+    df = df.drop('Unnamed: 0', axis = 1)
+    df = df.drop('X', axis = 1)
+    clean_columns(df)
+    return df
+
+def load_test_feature_set():
+    df = pd.read_csv(FEATURE_TEST_SET)
     df = df.drop('Unnamed: 0', axis = 1)
     df = df.drop('X', axis = 1)
     clean_columns(df)
@@ -175,51 +182,3 @@ def split_dataset(x, y, portion=0.33):
     print('\tx=%s, y=%s' % (x_test.shape, y_test.shape))
 
     return x_train, x_test, y_train, y_test
-
-# From the Udacity Student Intervention Notebook
-def train_classifier(clf, X_train, y_train):
-    ''' Fits a classifier to the training data. '''
-    
-    # Start the clock, train the classifier, then stop the clock
-    start = time()
-    clf.fit(X_train, y_train)
-    end = time()
-    
-    # Print the results
-    print "Trained model in {:.4f} seconds".format(end - start)
-
-    return clf
-
-    
-def predict_labels(clf, features, target):
-    ''' Makes predictions using a fit classifier based on F1 score. '''
-    
-    # Start the clock, make predictions, then stop the clock
-    start = time()
-    y_pred = clf.predict(features)
-    #y_proba = clf.predict_proba(features)
-    end = time()
-    
-    # Print and return results
-    print "Made predictions in {:.4f} seconds.".format(end - start)
-    return f1_score(target, y_pred), roc_auc_score(target, y_pred)
-
-
-def train_predict(clf, X_train, y_train, X_test, y_test):
-    ''' Train and predict using a classifer based on F1 score. '''
-    
-    # Indicate the classifier and the training set size
-    print "Training a {} using a training set size of {}. . .".format(clf.__class__.__name__, len(X_train))
-    
-    # Train the classifier
-    clf = train_classifier(clf, X_train, y_train)
-    
-    f1_train, auc_train = predict_labels(clf, X_train, y_train)
-    f1_test, auc_test = predict_labels(clf, X_test, y_test)
-    # Print the results of prediction for both training and testing
-    print "F1 score for training set: {:.4f}, and AUC {:.4f}"\
-        .format(f1_train, auc_train)
-    print "F1 score for test set: {:.4f} and AUC {:.4f}."\
-        .format(f1_test, auc_test)
-    
-    return clf
