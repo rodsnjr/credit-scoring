@@ -77,24 +77,6 @@ def basic_exploration(df):
     print('Total Number number of persons with delinquency %s' % yes)
     print('Total Number number of persons without delinquency %s' % no)
 
-
-def mad_based_outlier(points, thresh=3.5):
-    if len(points.shape) == 1:
-        points = points[:,None]
-    median = np.median(points, axis=0)
-    diff = np.sum((points - median)**2, axis=-1)
-    diff = np.sqrt(diff)
-    med_abs_deviation = np.median(diff)
-
-    modified_z_score = 0.6745 * diff / med_abs_deviation
-
-    return modified_z_score > thresh
-
-def percentile_based_outlier(data, threshold=95):
-    diff = (100 - threshold) / 2.0
-    (minval, maxval) = np.percentile(data, [diff, 100 - diff])
-    return ((data < minval) | (data > maxval))
-
 def std_div(data, threshold=3):
     std = data.std()
     mean = data.mean()
@@ -105,52 +87,6 @@ def std_div(data, threshold=3):
         else:
             isOutlier.append(False)
     return isOutlier
-
-def outlier_ratio(data):
-    functions = [percentile_based_outlier, mad_based_outlier, std_div, outlier_vote]
-    outlierDict = {}
-    for func in functions:
-        funcResult = func(data)
-        count = 0
-        for val in funcResult:
-            if val == True:
-                count += 1 
-        outlierDict[str(func)[10:].split()[0]] = [count, '{:.2f}%'.format((float(count)/len(data))*100)]
-    
-    return outlierDict
-
-def outlier_vote(data):
-    x = percentile_based_outlier(data)
-    y = mad_based_outlier(data)
-    z = std_div(data)
-    temp = zip(data.index, x, y, z)
-    final = []
-    for i in range(len(temp)):
-        if temp[i].count(False) >= 2:
-            final.append(False)
-        else:
-            final.append(True)
-    return final
-
-def replace_outlier(data, method = outlier_vote, replace='median'):
-    '''replace: median (auto)
-                'minUpper' which is the upper bound of the outlier detection'''
-    vote = outlierVote(data)
-    x = pd.DataFrame(zip(data, vote), columns=['debt', 'outlier'])
-    if replace == 'median':
-        replace = x.debt.median()
-    elif replace == 'minUpper':
-        replace = min([val for (val, vote) in zip(data, vote) if vote == True])
-        if replace < data.mean():
-            return 'There are outliers lower than the sample mean'
-    debtNew = []
-    for i in range(x.shape[0]):
-        if x.iloc[i][1] == True:
-            debtNew.append(replace)
-        else:
-            debtNew.append(x.iloc[i][0])
-    
-    return debtNew
 
 def describe_ages(data, min_age=16, max_age=30):
     ages = {}
